@@ -4,7 +4,12 @@
 
 #define BAUD_RATE 115200
 
+// RX: GPIO14, TX: GPIO12, no inverse, buffer size 256, 8 databits, 1 stopbit
 SoftwareSerial swSer(14, 12, false, 256);
+
+// RX: GPIO14, TX: GPIO12, no inverse, buffer size 256, 7 databits, 2 stopbits
+// SoftwareSerial swSer(14, 12, false, 256, 7, 2);
+
 
 void setup() {
   Serial.begin(BAUD_RATE);

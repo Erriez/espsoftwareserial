@@ -66,8 +66,12 @@ static void (*ISRList[MAX_PIN+1])() = {
       sws_isr_15
 };
 
-SoftwareSerial::SoftwareSerial(int receivePin, int transmitPin, bool inverse_logic, unsigned int buffSize) {
+SoftwareSerial::SoftwareSerial(int receivePin, int transmitPin,
+                               bool inverse_logic, unsigned int buffSize,
+                               int dataBits, int stopBits) {
   m_oneWire = (receivePin == transmitPin);
+  m_dataBits = dataBits < 8 ? dataBits : 8;
+  m_stopBits = stopBits == 2 ? 2 : 1;
   m_rxValid = m_txValid = m_txEnableValid = false;
   m_buffer = NULL;
   m_invert = inverse_logic;
@@ -193,7 +197,7 @@ size_t SoftwareSerial::write(uint8_t b) {
   digitalWrite(m_txPin, m_invert);
   //------------------------
   WAIT;
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < m_dataBits; i++) {
     digitalWrite(m_txPin, (b & 1) ? HIGH : LOW);
     WAIT;
     b >>= 1;
@@ -202,6 +206,9 @@ size_t SoftwareSerial::write(uint8_t b) {
   digitalWrite(m_txPin, !m_invert);
 //----------------------------
   WAIT;
+  if (m_stopBits == 2) {
+    WAIT;
+  }
   if (m_txEnableValid) digitalWrite(m_txEnablePin, LOW);
   if (!m_intTxEnabled)
     sei();
@@ -229,15 +236,19 @@ void ICACHE_RAM_ATTR SoftwareSerial::rxRead() {
   unsigned long wait = m_bitTime + m_bitTime/3 - 500;
   unsigned long start = ESP.getCycleCount();
   uint8_t rec = 0;
-  for (int i = 0; i < 8; i++) {
+  for (int i = 0; i < m_dataBits; i++) {
     WAIT;
     rec >>= 1;
-    if (digitalRead(m_rxPin))
-      rec |= 0x80;
+    if (digitalRead(m_rxPin)) {
+        rec |= (1 << (m_dataBits - 1));
+    }
   }
   if (m_invert) rec = ~rec;
   // Stop bit
   WAIT;
+  if (m_stopBits == 2) {
+    WAIT;
+  }
   // Store the received value in the buffer unless we have an overflow
   unsigned int next = (m_inPos+1) % m_buffSize;
   if (next != m_outPos) {

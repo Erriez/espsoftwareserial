@@ -34,7 +34,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 class SoftwareSerial : public Stream {
 public:
-  SoftwareSerial(int receivePin, int transmitPin, bool inverse_logic = false, unsigned int buffSize = 64);
+  SoftwareSerial(int receivePin, int transmitPin,
+                 bool inverse_logic=false, unsigned int buffSize=64,
+                 int dataBits=8, int stopBits=1);
   virtual ~SoftwareSerial();
 
   void begin(long speed);
@@ -73,7 +75,7 @@ private:
 
   // Member variables
   bool m_oneWire;
-  int m_rxPin, m_txPin, m_txEnablePin;
+  int m_rxPin, m_txPin, m_dataBits, m_stopBits, m_txEnablePin;
   bool m_rxValid, m_rxEnabled;
   bool m_txValid, m_txEnableValid;
   bool m_invert;
